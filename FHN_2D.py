@@ -7,7 +7,7 @@ Periodic boundary conditions are assumed.
 """
 __version__=1.0
 __author__ = """Omer Tzuk (cliffon@gmail.com)"""
-from numba import jit
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation

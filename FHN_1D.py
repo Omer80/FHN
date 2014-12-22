@@ -20,6 +20,7 @@ rc('text', usetex=True)
 # Model parameters
 
 a0 = (1./np.sqrt(3)) * 1.3 # Condition for the fix point to be in the outer branch a/e > 1/ sqrt(3)
+a1 = 3.
 e = 0.02 # Condition for excitable system e << 1
 delta = 0.1 # Diffusion coefficient
 
@@ -35,18 +36,27 @@ dx2 = dx**2
 dt = dx2 / 100
 
 
+	
+fig, ax = plt.subplots()
 
-def main():
 	
-	fig, ax = plt.subplots()
-		
-	# Initial conditions:
-	u_init = 0.2*((np.random.rand(N))-0.5) - a0   # random initial conditions around u_0
-	v_init = 0.2*((np.random.rand(N))-0.5) -a0 + a0**3 # random initial conditions around v_0
+# Initial conditions:
+u_init = 0.2*((np.random.rand(N))-0.5) - a0   # random initial conditions around u_0
+v_init = 0.2*((np.random.rand(N))-0.5) -a0 + a0**3 # random initial conditions around v_0
+
+line, = ax.plot(l, u_init)
+
+u = u_init.copy()
+v = v_init.copy()
+
+def updatefig(*args):
+    global l,u,v,dt,dx2
+    u += dt*(u - u**3 - v + laplacian(u, dx2))
+    v += dt*dt*(e*(u - a1*v + a0) + delta*laplacian(v,dx2))
+    line.set_ydata(u)
+    return line,
 	
-		
-	t, u = evolve_FHN(u_init, v_init)
-	print u
+
 	
 def step_u(u_old, v_old, dt, dx2):
 	"""
@@ -62,13 +72,19 @@ def step_v(u_old, v_old, dt, dx2):
 	
 def laplacian(var, dh2):
 	"""
-	
+	Implement the d^2(u)/dx^2 for periodic boundary condition
 	"""
 	return (np.roll(var,1,axis=0) + np.roll(var,-1,axis=0) -2*var)/dh2
 
+
+def step_FHN(u_old, v_old, dt, dx2):
+	"""
+	
+	"""
+	return step_u(u_old, v_old, dt, dx2), step_v(u_old, v_old, dt, dx2)
+	
 def evolve_FHN(u_init, v_init):
-	
-	
+		
 	
 	t_plot = []
 	u_plot = []
@@ -91,7 +107,5 @@ def evolve_FHN(u_init, v_init):
 	return t_plot, u_plot
 
 
-
-
-if __name__ == "__main__":
-	main()
+ani = animation.FuncAnimation(fig, updatefig, interval=50, blit=False)
+plt.show()
