@@ -27,9 +27,9 @@ delta = 0.1 # Diffusion coefficient
 start  = 0.0
 finish = .0005
 
-L = 1.
-N = 10.
-l = np.arange(0,N,1)
+L = 10.
+N = 100.
+l = np.linspace(0,L,N)
 
 dx = L/N
 dx2 = dx**2
@@ -107,5 +107,5 @@ def evolve_FHN(u_init, v_init):
 	return t_plot, u_plot
 
 
-ani = animation.FuncAnimation(fig, updatefig, interval=50, blit=False)
+ani = animation.FuncAnimation(fig, updatefig, interval=100, blit=False)
 plt.show()
