@@ -19,16 +19,16 @@ rc('text', usetex=True)
 
 # Model parameters
 
-a0 = (1./np.sqrt(3)) * 1.3 # Condition for the fix point to be in the outer branch a/e > 1/ sqrt(3)
-a1 = 3.
-e = 0.02 # Condition for excitable system e << 1
-delta = 0.1 # Diffusion coefficient
+a0 = 0.0 # Condition for the fix point to be in the outer branch a/e > 1/ sqrt(3)
+a1 = 0.5
+e = 2.0 # Condition for excitable system e << 1
+delta = 7.5 # Diffusion coefficient
 
 start  = 0.0
 finish = .0005
 
-L = 10.
-N = 100.
+L = 0.1
+N = 1000.
 l = np.linspace(0,L,N)
 
 dx = L/N
@@ -107,5 +107,5 @@ def evolve_FHN(u_init, v_init):
 	return t_plot, u_plot
 
 
-ani = animation.FuncAnimation(fig, updatefig, interval=100, blit=False)
+ani = animation.FuncAnimation(fig, updatefig, interval=1, blit=False)
 plt.show()
