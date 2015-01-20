@@ -10,7 +10,6 @@ __author__ = """Omer Tzuk (cliffon@gmail.com)"""
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 ## for Palatino and other serif fonts use:
@@ -19,42 +18,68 @@ rc('text', usetex=True)
 
 # Model parameters
 
-a0 = 0.0 # Condition for the fix point to be in the outer branch a/e > 1/ sqrt(3)
-a1 = 0.5
-e = 2.0 # Condition for excitable system e << 1
-delta = 7.5 # Diffusion coefficient
 
-start  = 0.0
-finish = .0005
-
-L = 0.1
-N = 1000.
-l = np.linspace(0,L,N)
-
-dx = L/N
-dx2 = dx**2
-dt = dx2 / 100
-
-
+par = {'a0' : 0.0, 
+	   'a1' : 0.5,
+	   'delta' : 7.5,
+	   'e' : 2.0,
+	   'L' : 3.0,
+	   'N' : 1000,
+	   }
+	   
+	   
+def main():
+	start  = 0.0
+	step   = 1.0e-1
+	finish = 100.0
 	
-fig, ax = plt.subplots()
-
+	# Condition for excitable system e_c = delta / ((2.0-a) + 2.0*np.sqrt(1.0-a))
+	ec = par['delta'] / ((2.0-par['a1']) + 2.0*np.sqrt(1.0-par['a1']))
+	e =  ec - 0.1 
+	l = np.linspace(0,par['L'],par['N'])
+	dx = par['L']/par['N']
+	dx2 = dx**2
+	dt = 0.00001/(2.0 * dx**2)
 	
-# Initial conditions:
-u_init = 0.2*((np.random.rand(N))-0.5) - a0   # random initial conditions around u_0
-v_init = 0.2*((np.random.rand(N))-0.5) -a0 + a0**3 # random initial conditions around v_0
-
-line, = ax.plot(l, u_init)
-
-u = u_init.copy()
-v = v_init.copy()
-
-def updatefig(*args):
-    global l,u,v,dt,dx2
-    u += dt*(u - u**3 - v + laplacian(u, dx2))
-    v += dt*dt*(e*(u - a1*v + a0) + delta*laplacian(v,dx2))
-    line.set_ydata(u)
-    return line,
+	# Critical wavenumber 
+	kc = np.sqrt((par['delta'] - ec*par['a1'])/ (2.0*par['delta']))
+	
+	par.update(dx=dx, dt=dt, e=e,dx2=dx2, ec=ec, kc=kc)
+	
+	
+	# Random initial conditions:
+	u_init = 0.2*((np.random.rand(par['N']))-0.5) - par['a0']   # random initial conditions around u_0
+	v_init = 0.2*((np.random.rand(par['N']))-0.5) -par['a0'] + par['a0']**3 # random initial conditions around v_0
+	
+	# Sinus functions
+	#u_init = np.sin(np.linspace(0,L*2*np.pi,N))
+	#v_init = np.sin(np.linspace(0,L*2*np.pi,N))
+	
+	plt.figure()
+	
+	title=plt.title('time=%2.1f'%start)
+	
+	u_old = u_init.copy() 
+	v_old = v_init.copy() 
+	
+	#plt.draw()
+	plt.savefig('img_t_0.png', format='png', dpi=1000)
+	image = 0
+	t=start
+	# start loop
+	for tout in np.arange(start+step,finish+step,step):
+	    while t < tout:
+			#print "time:", t
+			u_new = step_u(u_old, v_old, dt, dx2)
+			v_new = step_v(u_old, v_old, dt, dx2)
+			u_old = u_new
+			v_old = v_new
+			t+=dt
+	    title.set_text('time=%2f'%(t))
+	    plt.plot(l,u_new)
+	    image +=1
+	    plt.savefig('img_t_'+str(image)+'.png', format='png', dpi=1000)
+	    #plt.draw()
 	
 
 	
@@ -68,44 +93,18 @@ def step_v(u_old, v_old, dt, dx2):
 	"""
 	Implement the step of equation \dot(v) = e(u + a)
 	"""
-	return v_old + dt*(e*(u_old + a0) + delta*laplacian(v_old,dx2))
+	return v_old + dt*(par['e']*(u_old + par['a0']) + par['delta']*laplacian(v_old,dx2))
 	
 def laplacian(var, dh2):
 	"""
 	Implement the d^2(u)/dx^2 for periodic boundary condition
 	"""
-	return (np.roll(var,1,axis=0) + np.roll(var,-1,axis=0) -2*var)/dh2
+	numer = (3.0/2.0)*np.roll(var,1,axis=0) + (3.0/2.0)*np.roll(var,-1,axis=0) + (-49.0/18.0)*var
+	numer += (-3.0/20.0)*np.roll(var,2,axis=0) + (-3.0/20.0)*np.roll(var,-2,axis=0)
+	numer += (1.0/90.0)*np.roll(var,3,axis=0) + (1.0/90.0)*np.roll(var,-3,axis=0)
+	return numer/dh2
 
 
-def step_FHN(u_old, v_old, dt, dx2):
-	"""
-	
-	"""
-	return step_u(u_old, v_old, dt, dx2), step_v(u_old, v_old, dt, dx2)
-	
-def evolve_FHN(u_init, v_init):
-		
-	
-	t_plot = []
-	u_plot = []
-	
-	t_plot.append(start)
-	u_plot.append(u_init)
-	
-	u_old = u_init
-	v_old = v_init	
-	
-		
-	for t in np.arange(start+dt, finish+dt, dt):
-		u_new = step_u(u_old, v_old, dt, dx2)
-		v_new = step_v(u_old, v_old, dt, dx2)
-		u_old = u_new
-		v_old = v_new
-		t_plot.append(t)
-		u_plot.append(u_new)
-		
-	return t_plot, u_plot
 
-
-ani = animation.FuncAnimation(fig, updatefig, interval=1, blit=False)
-plt.show()
+if __name__=="__main__":
+	main()
